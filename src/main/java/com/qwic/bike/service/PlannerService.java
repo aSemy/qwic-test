@@ -2,13 +2,18 @@ package com.qwic.bike.service;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Optional;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
+import org.paukov.combinatorics3.Generator;
+import org.paukov.combinatorics3.IGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -55,6 +60,11 @@ public class PlannerService {
 		}
 
 		// for each group of clashing runs, remove least number of runs until no clash
+		List<ProductionRun> answer2 = asd(answer);
+		
+
+		LOG.info("{} answer: [{}]", answer2.size(),
+				answer2.stream().map(ProductionRun::toString).collect(Collectors.joining(", ")));
 
 	}
 
@@ -85,7 +95,8 @@ public class PlannerService {
 						clashes.add(followingRun);
 					} else {
 						// if they don't, break?
-						//iterator = runs.listIterator(followingIterator.hasNext() ? followingIterator.nextIndex() : followingIterator.previousIndex());
+						// iterator = runs.listIterator(followingIterator.hasNext() ?
+						// followingIterator.nextIndex() : followingIterator.previousIndex());
 					}
 				}
 			}
@@ -94,5 +105,44 @@ public class PlannerService {
 		}
 
 		return answer;
+	}
+
+	private List<ProductionRun> asd(List<SortedSet<ProductionRun>> listsOfClashes) {
+
+		List<ProductionRun> answer = new ArrayList<>();
+
+		for (SortedSet<ProductionRun> clashes : listsOfClashes) {
+			List<ProductionRun> combo = getLargestNonClashingCombo(clashes);
+			answer.addAll(combo);
+		}
+		
+		return answer;
+	}
+
+	private List<ProductionRun> getLargestNonClashingCombo(SortedSet<ProductionRun> clashes) {
+		for (int subsetSize = clashes.size(); subsetSize > 0; subsetSize--) {
+			IGenerator<List<ProductionRun>> genCombos = Generator.combination(clashes).simple(subsetSize);
+
+			Optional<List<ProductionRun>> findFirst = genCombos.stream().filter(l -> !doRunsClash(l)).findFirst();
+
+			if (findFirst.isPresent()) {
+				LOG.info(findFirst.get().stream().map(ProductionRun::toString).collect(Collectors.joining(", ")));
+				return findFirst.get();
+			}
+			// else, there's a clash, so try a smaller subset
+
+		}
+		LOG.error("Couldn't find non clashing combo!!! Input: {}",
+				clashes.stream().map(ProductionRun::toString).collect(Collectors.joining(", ")));
+		return new ArrayList<>();
+	}
+
+	private boolean doRunsClash(List<ProductionRun> runs) {
+		List<SortedSet<ProductionRun>> listsOfClashingRuns = getListsOfClashingRuns(runs);
+		for (SortedSet<ProductionRun> clashes : listsOfClashingRuns) {
+			if (clashes.size() > 1)
+				return true;
+		}
+		return false;
 	}
 }
