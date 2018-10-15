@@ -111,30 +111,6 @@ public class ProductionRun implements Comparable<ProductionRun> {
 	public int compareTo(ProductionRun that) {
 		return COMPARATOR.compare(this, that);
 	}
-	
-	public boolean isClash(final ProductionRun that) {
-		
-		LocalDateTime thisStart = this.getStartDateTime();
-		LocalDateTime thatStart = that.getStartDateTime();
-		LocalDateTime thisEnd = this.getEndDateTime();
-		LocalDateTime thatEnd = that.getEndDateTime();
-
-		// if this' start is between the other's start/end
-		if (DateTimeUtils.isDateTimeInRange(thisStart, thatStart, thatEnd))
-			return true;
-		// if this' end  is between the other's start/end
-		if (DateTimeUtils.isDateTimeInRange(thisEnd, thatStart, thatEnd))
-			return true;
-		// if that's start is between this' start/end
-		if (DateTimeUtils.isDateTimeInRange(thatStart, thisStart, thisEnd))
-			return true;
-		// if that's end is between this' start/end
-		if (DateTimeUtils.isDateTimeInRange(thatEnd, thisStart, thisEnd))
-			return true;
-		
-		return false;
-	}
-
 
 	@Override
 	public String toString() {

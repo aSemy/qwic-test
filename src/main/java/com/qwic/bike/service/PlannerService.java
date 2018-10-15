@@ -1,6 +1,7 @@
 package com.qwic.bike.service;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
@@ -20,6 +21,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.qwic.bike.model.ProductionRun;
+import com.qwic.bike.util.DateTimeUtils;
 
 @Service
 public class PlannerService {
@@ -33,7 +35,8 @@ public class PlannerService {
 		mapper.findAndRegisterModules();
 	}
 
-	public List<ProductionRun> maximiseNonClashingRuns(final String jsonInput) throws JsonParseException, JsonMappingException, IOException {
+	public List<ProductionRun> maximiseNonClashingRuns(final String jsonInput)
+			throws JsonParseException, JsonMappingException, IOException {
 		List<ProductionRun> runs = parseJsonListOfProductionRuns(jsonInput);
 
 		return maximiseNonClashingRuns(runs);
@@ -54,7 +57,7 @@ public class PlannerService {
 
 		LOG.info("Answer: {}. Runs: [{}]", listOfNonClashingRuns.size(),
 				listOfNonClashingRuns.stream().map(ProductionRun::toString).collect(Collectors.joining(", ")));
-		
+
 		return listOfNonClashingRuns;
 
 	}
@@ -89,7 +92,7 @@ public class PlannerService {
 
 					// check following elements to see if they clash
 					// if they do, add to current list
-					if (run.isClash(followingRun)) {
+					if (isClash(run, followingRun)) {
 						LOG.info("Clash found between \n[{}] and\n[{}]", run, followingRun);
 						clashes.add(followingRun);
 					} else {
@@ -149,4 +152,28 @@ public class PlannerService {
 		}
 		return false;
 	}
+
+	static public boolean isClash(final ProductionRun aRun, final ProductionRun otherRun) {
+
+		LocalDateTime thisStart = aRun.getStartDateTime();
+		LocalDateTime thatStart = otherRun.getStartDateTime();
+		LocalDateTime thisEnd = aRun.getEndDateTime();
+		LocalDateTime thatEnd = otherRun.getEndDateTime();
+
+		// if this' start is between the other's start/end
+		if (DateTimeUtils.isDateTimeInRange(thisStart, thatStart, thatEnd))
+			return true;
+		// if this' end is between the other's start/end
+		if (DateTimeUtils.isDateTimeInRange(thisEnd, thatStart, thatEnd))
+			return true;
+		// if that's start is between this' start/end
+		if (DateTimeUtils.isDateTimeInRange(thatStart, thisStart, thisEnd))
+			return true;
+		// if that's end is between this' start/end
+		if (DateTimeUtils.isDateTimeInRange(thatEnd, thisStart, thisEnd))
+			return true;
+
+		return false;
+	}
+
 }
