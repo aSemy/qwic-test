@@ -35,18 +35,31 @@ public class PlannerService {
 		mapper.findAndRegisterModules();
 	}
 
-	public List<ProductionRun> maximiseNonClashingRuns(final String jsonInput)
+	public List<ProductionRun> maximiseNonClashingRuns(final String jsonInput, final LocalDateTime currentDateTime)
 			throws JsonParseException, JsonMappingException, IOException {
 		List<ProductionRun> runs = parseJsonListOfProductionRuns(jsonInput);
 
-		return maximiseNonClashingRuns(runs);
+		return maximiseNonClashingRuns(runs, currentDateTime);
 	}
 
-	public List<ProductionRun> maximiseNonClashingRuns(List<ProductionRun> runs) {
+	/**
+	 * Get the maximum amount of non-clashing runs.
+	 * 
+	 * Runs with start dates after currentDateTime are removed and not processed.
+	 * 
+	 * @param runs
+	 * @param currentDateTime
+	 * @return
+	 */
+	public List<ProductionRun> maximiseNonClashingRuns(List<ProductionRun> runs, final LocalDateTime currentDateTime) {
+
+		// remove runs that are less than or equal to the current date time
+		runs = runs.stream().filter(r -> r.getStartDateTime().isAfter(currentDateTime)).collect(Collectors.toList());
 
 		// get groups of clashing runs
 		final List<SortedSet<ProductionRun>> listsOfClashingRuns = getListsOfClashingRuns(runs);
 
+		// debug print
 		for (SortedSet<ProductionRun> clashingRuns : listsOfClashingRuns) {
 			LOG.info("{} clashing runs: [{}]", clashingRuns.size(),
 					clashingRuns.stream().map(ProductionRun::toString).collect(Collectors.joining(", ")));
@@ -115,8 +128,11 @@ public class PlannerService {
 
 		List<ProductionRun> answer = new ArrayList<>();
 
+		// run through each group of clashes
 		for (SortedSet<ProductionRun> clashes : listsOfClashes) {
+			// for each group, get the largest non-clashing combo
 			List<ProductionRun> combo = getLargestNonClashingCombo(clashes);
+			// add to answer
 			answer.addAll(combo);
 		}
 
@@ -139,7 +155,7 @@ public class PlannerService {
 			}
 			// else, there's a clash, so try a smaller subset
 		}
-		LOG.error("Couldn't find non clashing combo!!! Input: {}",
+		LOG.error("Couldn't find non clashing combo!!! This shouldn't be possible. Input: {}",
 				clashes.stream().map(ProductionRun::toString).collect(Collectors.joining(", ")));
 		return new ArrayList<>();
 	}
