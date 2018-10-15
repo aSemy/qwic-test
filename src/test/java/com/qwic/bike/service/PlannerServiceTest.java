@@ -98,6 +98,22 @@ public class PlannerServiceTest {
 	}
 
 	@Test
+	public void testClash_SecondEndInsideFirst() {
+
+		ProductionRun first = new ProductionRun(LocalDateTime.of(2018, 1, 15, 0, 0), 10);
+		ProductionRun second = new ProductionRun(LocalDateTime.of(2018, 1, 10, 0, 0), 8);
+
+		// check conditions are set correctly
+		assert second.getStartDateTime().isBefore(first.getStartDateTime())
+				&& second.getEndDateTime().isAfter(first.getStartDateTime())
+				&& second.getEndDateTime().isBefore(first.getEndDateTime());
+
+		assertTrue(PlannerService.isClash(first, second));
+		// inverse should be the same
+		assertTrue(PlannerService.isClash(second, first));
+	}
+
+	@Test
 	public void test1() throws JsonParseException, JsonMappingException, IOException {
 		// json input to be tested
 		final String inputJson = "[ " //
