@@ -2,14 +2,11 @@ package com.qwic.bike.service;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Optional;
 import java.util.SortedSet;
 import java.util.TreeSet;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 import org.paukov.combinatorics3.Generator;
@@ -36,10 +33,30 @@ public class PlannerService {
 		mapper.findAndRegisterModules();
 	}
 
-	public void test(final String input) throws JsonParseException, JsonMappingException, IOException {
-		List<ProductionRun> runs = parseJsonListOfProductionRuns(input);
+	public List<ProductionRun> maximiseNonClashingRuns(final String jsonInput) throws JsonParseException, JsonMappingException, IOException {
+		List<ProductionRun> runs = parseJsonListOfProductionRuns(jsonInput);
 
-		d(runs);
+		return maximiseNonClashingRuns(runs);
+	}
+
+	public List<ProductionRun> maximiseNonClashingRuns(List<ProductionRun> runs) {
+
+		// get groups of clashing runs
+		final List<SortedSet<ProductionRun>> listsOfClashingRuns = getListsOfClashingRuns(runs);
+
+		for (SortedSet<ProductionRun> clashingRuns : listsOfClashingRuns) {
+			LOG.info("{} clashing runs: [{}]", clashingRuns.size(),
+					clashingRuns.stream().map(ProductionRun::toString).collect(Collectors.joining(", ")));
+		}
+
+		// for each group of clashing runs, remove least number of runs until no clash
+		List<ProductionRun> listOfNonClashingRuns = getNonClashingRunsFromListsOfClashingRuns(listsOfClashingRuns);
+
+		LOG.info("Answer: {}. Runs: [{}]", listOfNonClashingRuns.size(),
+				listOfNonClashingRuns.stream().map(ProductionRun::toString).collect(Collectors.joining(", ")));
+		
+		return listOfNonClashingRuns;
+
 	}
 
 	public List<ProductionRun> parseJsonListOfProductionRuns(final String jsonListOfProductionRuns)
@@ -47,25 +64,6 @@ public class PlannerService {
 		List<ProductionRun> runs = mapper.readValue(jsonListOfProductionRuns, new TypeReference<List<ProductionRun>>() {
 		});
 		return runs;
-	}
-
-	public void d(List<ProductionRun> runs) {
-
-		// get groups of clashing runs
-		final List<SortedSet<ProductionRun>> answer = getListsOfClashingRuns(runs);
-
-		for (SortedSet<ProductionRun> clashingRuns : answer) {
-			LOG.info("{} clashing runs: [{}]", clashingRuns.size(),
-					clashingRuns.stream().map(ProductionRun::toString).collect(Collectors.joining(", ")));
-		}
-
-		// for each group of clashing runs, remove least number of runs until no clash
-		List<ProductionRun> answer2 = asd(answer);
-		
-
-		LOG.info("{} answer: [{}]", answer2.size(),
-				answer2.stream().map(ProductionRun::toString).collect(Collectors.joining(", ")));
-
 	}
 
 	private List<SortedSet<ProductionRun>> getListsOfClashingRuns(List<ProductionRun> runs) {
@@ -92,11 +90,13 @@ public class PlannerService {
 					// check following elements to see if they clash
 					// if they do, add to current list
 					if (run.isClash(followingRun)) {
+						LOG.info("Clash found between \n[{}] and\n[{}]", run, followingRun);
 						clashes.add(followingRun);
 					} else {
+						LOG.info("PR does NOT [{}] clash with [{}]", run, followingRun);
 						// if they don't, break?
 						// iterator = runs.listIterator(followingIterator.hasNext() ?
-						// followingIterator.nextIndex() : followingIterator.previousIndex());
+						// followingIterator.nextIndex() : runs.indexOf(followingRun));
 					}
 				}
 			}
@@ -107,7 +107,8 @@ public class PlannerService {
 		return answer;
 	}
 
-	private List<ProductionRun> asd(List<SortedSet<ProductionRun>> listsOfClashes) {
+	private List<ProductionRun> getNonClashingRunsFromListsOfClashingRuns(
+			List<SortedSet<ProductionRun>> listsOfClashes) {
 
 		List<ProductionRun> answer = new ArrayList<>();
 
@@ -115,22 +116,25 @@ public class PlannerService {
 			List<ProductionRun> combo = getLargestNonClashingCombo(clashes);
 			answer.addAll(combo);
 		}
-		
+
 		return answer;
 	}
 
 	private List<ProductionRun> getLargestNonClashingCombo(SortedSet<ProductionRun> clashes) {
+		// go from large subsets to small
 		for (int subsetSize = clashes.size(); subsetSize > 0; subsetSize--) {
+			// generate all combinations for this clash
 			IGenerator<List<ProductionRun>> genCombos = Generator.combination(clashes).simple(subsetSize);
 
+			// for each combo, find the first that doesn't clash
 			Optional<List<ProductionRun>> findFirst = genCombos.stream().filter(l -> !doRunsClash(l)).findFirst();
 
 			if (findFirst.isPresent()) {
-				LOG.info(findFirst.get().stream().map(ProductionRun::toString).collect(Collectors.joining(", ")));
+				LOG.info("Found non clashing subset: {}",
+						findFirst.get().stream().map(ProductionRun::toString).collect(Collectors.joining(", ")));
 				return findFirst.get();
 			}
 			// else, there's a clash, so try a smaller subset
-
 		}
 		LOG.error("Couldn't find non clashing combo!!! Input: {}",
 				clashes.stream().map(ProductionRun::toString).collect(Collectors.joining(", ")));

@@ -1,6 +1,8 @@
 package com.qwic.bike;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -29,30 +31,8 @@ public class ParseTest {
 	@Autowired
 	private PlannerService plannerService;
 
-	@Test
-	public void testParseJsonListOfProductionRuns1() throws JsonParseException, JsonMappingException, IOException {
-
-		// create expected results
-		final Map<LocalDateTime, List<Long>> mapOfExpectedDatesToDurations = new HashMap<>();
-		mapOfExpectedDatesToDurations.put(LocalDateTime.of(2018, 1, 2, 0, 0), Arrays.asList(5l));
-		mapOfExpectedDatesToDurations.put(LocalDateTime.of(2018, 1, 9, 0, 0), Arrays.asList(7l, 3l));
-		mapOfExpectedDatesToDurations.put(LocalDateTime.of(2018, 1, 15, 0, 0), Arrays.asList(6l));
-
-		// json input to be tested
-		final String input = "[ " //
-				+ "{ " //
-				+ "\"startingDay\": \"2018-01-02T00:00:00.000Z\", \"duration\": 5 " //
-				+ "}," //
-				+ "{" //
-				+ "\"startingDay\": \"2018-01-09T00:00:00.000Z\", \"duration\": 7" //
-				+ "}," //
-				+ "{" //
-				+ "\"startingDay\": \"2018-01-15T00:00:00.000Z\", \"duration\": 6" //
-				+ "}," //
-				+ "{" //
-				+ "\"startingDay\": \"2018-01-09T00:00:00.000Z\", \"duration\": 3" //
-				+ "}" //
-				+ "]";
+	public void testParseJsonListOfProductionRuns(final Map<LocalDateTime, List<Long>> mapOfExpectedDatesToDurations,
+			final String input) throws JsonParseException, JsonMappingException, IOException {
 
 		// test method
 		final List<ProductionRun> runs = plannerService.parseJsonListOfProductionRuns(input);
@@ -84,5 +64,74 @@ public class ParseTest {
 					value.containsAll(mapOfOutputStartDateToProductionRuns.get(expectedDate).stream()
 							.map(ProductionRun::getDurationDays).collect(Collectors.toList())));
 		}
+	}
+
+	@Test
+	public void testParseJsonListOfProductionRuns1() throws JsonParseException, JsonMappingException, IOException {
+
+		// json input to be tested
+		final String inputJson = "[ " //
+				+ "{ " //
+				+ "\"startingDay\": \"2018-01-02T00:00:00.000Z\", \"duration\": 5 " //
+				+ "}," //
+				+ "{" //
+				+ "\"startingDay\": \"2018-01-09T00:00:00.000Z\", \"duration\": 7" //
+				+ "}," //
+				+ "{" //
+				+ "\"startingDay\": \"2018-01-15T00:00:00.000Z\", \"duration\": 6" //
+				+ "}," //
+				+ "{" //
+				+ "\"startingDay\": \"2018-01-09T00:00:00.000Z\", \"duration\": 3" //
+				+ "}" //
+				+ "]";
+
+		// create expected results
+		final Map<LocalDateTime, List<Long>> mapOfExpectedDatesToDurations = new HashMap<LocalDateTime, List<Long>>() {
+			private static final long serialVersionUID = -1320103785197444316L;
+			{
+				put(LocalDateTime.of(2018, 1, 2, 0, 0), Arrays.asList(5l));
+				put(LocalDateTime.of(2018, 1, 9, 0, 0), Arrays.asList(7l, 3l));
+				put(LocalDateTime.of(2018, 1, 15, 0, 0), Arrays.asList(6l));
+			}
+		};
+
+		testParseJsonListOfProductionRuns(mapOfExpectedDatesToDurations, inputJson);
+	}
+
+	@Test
+	public void testParseJsonListOfProductionRuns2() throws JsonParseException, JsonMappingException, IOException {
+
+		// json input to be tested
+		final String inputJson = "[ " //
+				+ "{ " //
+				+ "\"startingDay\": \"2018-01-03T00:00:00.000Z\", \"duration\": 5 " //
+				+ "}," //
+				+ "{" //
+				+ "\"startingDay\": \"2018-01-09T00:00:00.000Z\", \"duration\": 2" //
+				+ "}," //
+				+ "{" //
+				+ "\"startingDay\": \"2018-01-24T00:00:00.000Z\", \"duration\": 5" //
+				+ "}," //
+				+ "{" //
+				+ "\"startingDay\": \"2018-01-16T00:00:00.000Z\", \"duration\": 9" //
+				+ "}," //
+				+ "{" //
+				+ "\"startingDay\": \"2018-01-11T00:00:00.000Z\", \"duration\": 6" //
+				+ "}" //
+				+ "]";
+
+		// create expected results
+		final Map<LocalDateTime, List<Long>> mapOfExpectedDatesToDurations = new HashMap<LocalDateTime, List<Long>>() {
+			private static final long serialVersionUID = -5166643461408933100L;
+			{
+				put(LocalDateTime.of(2018, 1, 3, 0, 0), Arrays.asList(5l));
+				put(LocalDateTime.of(2018, 1, 9, 0, 0), Arrays.asList(2l));
+				put(LocalDateTime.of(2018, 1, 24, 0, 0), Arrays.asList(5l));
+				put(LocalDateTime.of(2018, 1, 16, 0, 0), Arrays.asList(9l));
+				put(LocalDateTime.of(2018, 1, 11, 0, 0), Arrays.asList(6l));
+			}
+		};
+
+		testParseJsonListOfProductionRuns(mapOfExpectedDatesToDurations, inputJson);
 	}
 }
