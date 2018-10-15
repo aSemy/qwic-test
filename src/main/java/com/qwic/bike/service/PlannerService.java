@@ -169,12 +169,12 @@ public class PlannerService {
 		return false;
 	}
 
-	static public boolean isClash(final ProductionRun aRun, final ProductionRun otherRun) {
+	static public boolean isClash(final ProductionRun thisRun, final ProductionRun thatRun) {
 
-		LocalDateTime thisStart = aRun.getStartDateTime();
-		LocalDateTime thatStart = otherRun.getStartDateTime();
-		LocalDateTime thisEnd = aRun.getEndDateTime();
-		LocalDateTime thatEnd = otherRun.getEndDateTime();
+		LocalDateTime thisStart = thisRun.getStartDateTime();
+		LocalDateTime thatStart = thatRun.getStartDateTime();
+		LocalDateTime thisEnd = thisRun.getEndDateTime();
+		LocalDateTime thatEnd = thatRun.getEndDateTime();
 
 		// if this' start is between the other's start/end
 		if (DateTimeUtils.isDateTimeInRange(thisStart, thatStart, thatEnd))
