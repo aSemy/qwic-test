@@ -3,11 +3,9 @@ package com.qwic.bike.service;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Optional;
-import java.util.SortedSet;
-import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import org.paukov.combinatorics3.Generator;
@@ -73,10 +71,10 @@ public class PlannerService {
 		runs = removeInvalidRuns(runs, currentDateTime);
 
 		// get groups of clashing runs
-		final List<SortedSet<ProductionRun>> listsOfClashingRuns = getListsOfClashingRuns(runs);
+		final List<List<ProductionRun>> listsOfClashingRuns = getListsOfClashingRuns(runs);
 
 		// debug print
-		for (SortedSet<ProductionRun> clashingRuns : listsOfClashingRuns) {
+		for (List<ProductionRun> clashingRuns : listsOfClashingRuns) {
 			LOG.info("{} clashing runs: [{}]", clashingRuns.size(),
 					clashingRuns.stream().map(ProductionRun::toString).collect(Collectors.joining(", ")));
 		}
@@ -84,8 +82,9 @@ public class PlannerService {
 		// for each group of clashing runs, remove least number of runs until no clash
 		List<ProductionRun> listOfNonClashingRuns = getNonClashingRunsFromListsOfClashingRuns(listsOfClashingRuns);
 
-		LOG.info("Answer: {}. Runs: [{}]", listOfNonClashingRuns.size(),
-				listOfNonClashingRuns.stream().map(ProductionRun::toString).collect(Collectors.joining(", ")));
+		LOG.info("Answer: {}", listOfNonClashingRuns.size());
+		LOG.debug("Runs:\n{}",
+				listOfNonClashingRuns.stream().map(ProductionRun::toString).collect(Collectors.joining("\n")));
 
 		return listOfNonClashingRuns;
 
@@ -115,54 +114,88 @@ public class PlannerService {
 		return runs;
 	}
 
-	private List<SortedSet<ProductionRun>> getListsOfClashingRuns(List<ProductionRun> runs) {
+	private List<List<ProductionRun>> getListsOfClashingRuns(List<ProductionRun> runs) {
 		// sort by start date, desc
 		runs.sort(ProductionRun.COMPARATOR);
-		final List<SortedSet<ProductionRun>> answer = new ArrayList<>();
+		final List<List<ProductionRun>> answer = new ArrayList<>();
 
-		for (ListIterator<ProductionRun> iterator = runs.listIterator(); iterator.hasNext();) {
-			ProductionRun run = iterator.next();
+		List<ProductionRun> clashes2 = new ArrayList<>();
+		ProductionRun previousRun = null;
 
-			if (answer.stream().flatMap(SortedSet::stream).collect(Collectors.toList()).contains(run)) {
-				// this run has already been processed
-				continue;
-			}
+		for (Iterator<ProductionRun> iterator = runs.iterator(); iterator.hasNext();) {
+			ProductionRun productionRun = iterator.next();
 
-			TreeSet<ProductionRun> clashes = new TreeSet<>();
-			clashes.add(run);
-
-			if (iterator.hasNext()) {
-				for (ListIterator<ProductionRun> followingIterator = runs
-						.listIterator(iterator.nextIndex()); followingIterator.hasNext();) {
-					ProductionRun followingRun = followingIterator.next();
-
-					// check following elements to see if they clash
-					// if they do, add to current list
-					if (isClash(run, followingRun)) {
-						LOG.info("Clash found between \n[{}] and\n[{}]", run, followingRun);
-						clashes.add(followingRun);
+			if (clashes2.isEmpty()) {
+				// init first run
+				clashes2.add(productionRun);
+			} else {
+				if (previousRun != null) {
+					if (isClash(productionRun, previousRun)) {
+						clashes2.add(productionRun);
 					} else {
-						LOG.info("PR does NOT [{}] clash with [{}]", run, followingRun);
-						// if they don't, break?
-						// iterator = runs.listIterator(followingIterator.hasNext() ?
-						// followingIterator.nextIndex() : runs.indexOf(followingRun));
+						// store this group of clashes
+						answer.add(clashes2);
+						// continue with a new group of clashes
+						previousRun = null;
+						clashes2 = new ArrayList<>();
+						clashes2.add(productionRun);
 					}
 				}
 			}
 
-			answer.add(clashes);
+			previousRun = productionRun;
 		}
+		answer.add(clashes2);
+
+//		for (ListIterator<ProductionRun> iterator = runs.listIterator(); iterator.hasNext();) {
+//			LOG.info("Current index: {}", iterator.nextIndex());
+//			ProductionRun run = iterator.next();
+//
+//			// if this run has already been processed, don't check for further clashes
+//			if (answer.stream().filter(clashes -> clashes.contains(run)).findFirst().isPresent())
+//				continue;
+//
+//			List<ProductionRun> clashes = new ArrayList<>();
+//			clashes.add(run);
+//
+//			if (iterator.hasNext()) {
+//				followingLoop: for (ListIterator<ProductionRun> followingIterator = runs
+//						.listIterator(iterator.nextIndex()); followingIterator.hasNext();) {
+//					LOG.info("     following index: {}", followingIterator.nextIndex());
+//					ProductionRun followingRun = followingIterator.next();
+//
+//					// check following elements to see if they clash
+//					// if they do, add to current list
+//					if (isClash(run, followingRun)) {
+//						LOG.info("    \nClash found between \n[{}] and\n[{}]", run, followingRun);
+//						clashes.add(followingRun);
+//					} else {
+//						LOG.debug("    PR does NOT [{}] clash with [{}]", run, followingRun);
+//
+//						// iterator = runs.listIterator(followingIterator.nextIndex() - clashes.size());
+//
+//						// as the runs are ordered, if one run doesn't clash the following won't either
+//						// so break this loop
+//						// break followingLoop;
+//						// iterator = runs.listIterator(followingIterator.hasNext() ?
+//						// followingIterator.nextIndex() : runs.indexOf(followingRun));
+//					}
+//				}
+//			}
+//
+//			clashes.sort(ProductionRun.COMPARATOR);
+//			answer.add(clashes);
+//		}
 
 		return answer;
 	}
 
-	private List<ProductionRun> getNonClashingRunsFromListsOfClashingRuns(
-			List<SortedSet<ProductionRun>> listsOfClashes) {
+	private List<ProductionRun> getNonClashingRunsFromListsOfClashingRuns(List<List<ProductionRun>> listsOfClashes) {
 
 		List<ProductionRun> answer = new ArrayList<>();
 
 		// run through each group of clashes
-		for (SortedSet<ProductionRun> clashes : listsOfClashes) {
+		for (List<ProductionRun> clashes : listsOfClashes) {
 			// for each group, get the largest non-clashing combo
 			List<ProductionRun> combo = getLargestNonClashingCombo(clashes);
 			// add to answer
@@ -172,7 +205,7 @@ public class PlannerService {
 		return answer;
 	}
 
-	private List<ProductionRun> getLargestNonClashingCombo(SortedSet<ProductionRun> clashes) {
+	private List<ProductionRun> getLargestNonClashingCombo(List<ProductionRun> clashes) {
 		// go from large subsets to small
 		for (int subsetSize = clashes.size(); subsetSize > 0; subsetSize--) {
 			// generate all combinations for this clash
@@ -194,8 +227,8 @@ public class PlannerService {
 	}
 
 	private boolean doRunsClash(List<ProductionRun> runs) {
-		List<SortedSet<ProductionRun>> listsOfClashingRuns = getListsOfClashingRuns(runs);
-		for (SortedSet<ProductionRun> clashes : listsOfClashingRuns) {
+		List<List<ProductionRun>> listsOfClashingRuns = getListsOfClashingRuns(runs);
+		for (List<ProductionRun> clashes : listsOfClashingRuns) {
 			if (clashes.size() > 1)
 				return true;
 		}
