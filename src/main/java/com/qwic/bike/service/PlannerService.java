@@ -6,11 +6,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
-import org.paukov.combinatorics3.Generator;
-import org.paukov.combinatorics3.IGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -240,14 +237,14 @@ public class PlannerService {
 //		return new ArrayList<>();
 	}
 
-	private boolean doRunsClash(List<ProductionRun> runs) {
-		List<List<ProductionRun>> listsOfClashingRuns = getListsOfClashingRuns(runs);
-		for (List<ProductionRun> clashes : listsOfClashingRuns) {
-			if (clashes.size() > 1)
-				return true;
-		}
-		return false;
-	}
+//	private boolean doRunsClash(List<ProductionRun> runs) {
+//		List<List<ProductionRun>> listsOfClashingRuns = getListsOfClashingRuns(runs);
+//		for (List<ProductionRun> clashes : listsOfClashingRuns) {
+//			if (clashes.size() > 1)
+//				return true;
+//		}
+//		return false;
+//	}
 
 	static public boolean isClash(final ProductionRun thisRun, final ProductionRun thatRun) {
 

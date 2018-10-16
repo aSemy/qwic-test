@@ -20,7 +20,6 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -264,6 +263,7 @@ public class PlannerServiceTest {
 	public void testTooManyRuns() {
 		// too many runs! expect failure
 
+		@SuppressWarnings("unchecked")
 		List<ProductionRun> runs = mock(List.class);
 		when(runs.size()).thenReturn((int) qtProps.getMaxQuantityOfRuns());
 
