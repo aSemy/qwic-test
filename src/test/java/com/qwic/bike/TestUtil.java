@@ -6,12 +6,11 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.PrimitiveIterator.OfLong;
+import java.util.Random;
 
 import com.qwic.bike.model.ProductionRun;
 
 public abstract class TestUtil {
-
-	public final static SecureRandom RANDOM = new SecureRandom();
 
 	public static List<ProductionRun> createNonClashingRuns(final long count, final LocalDateTime originalStart) {
 		final long gap = 3;
@@ -59,8 +58,9 @@ public abstract class TestUtil {
 		return clashingRuns;
 	}
 
-	public static List<ProductionRun> createSameStart(final long count, final LocalDateTime start) {
-		OfLong durations = RANDOM.longs(count, 1, 100).iterator();
+	public static List<ProductionRun> createSameStart(final long count, final LocalDateTime start,
+			final Random random) {
+		OfLong durations = random.longs(count, 1, 100).iterator();
 
 		final List<ProductionRun> runs = new ArrayList<>();
 
@@ -72,8 +72,8 @@ public abstract class TestUtil {
 		return runs;
 	}
 
-	public static List<ProductionRun> createSameEnd(final long count, final LocalDateTime end) {
-		OfLong durations = RANDOM.longs(count, 1, 100).iterator();
+	public static List<ProductionRun> createSameEnd(final long count, final LocalDateTime end, final Random random) {
+		OfLong durations = random.longs(count, 1, 100).iterator();
 
 		final List<ProductionRun> runs = new ArrayList<>();
 

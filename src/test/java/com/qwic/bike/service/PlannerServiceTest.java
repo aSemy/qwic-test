@@ -7,6 +7,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -16,7 +17,9 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Set;
 
+import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -37,12 +40,19 @@ public class PlannerServiceTest {
 	@Autowired
 	private PlannerService plannerService;
 
+	private SecureRandom random;
+
 	@Autowired
 	private QwicTestProperties qtProps;
 
 	// so that the tests always run, assume that the current date is earlier than
 	// the data.
 	private static final LocalDateTime validCurrentDate = LocalDateTime.of(2018, 1, 1, 0, 0);
+
+	@Before
+	public void beforeEachTest() {
+		this.random = new SecureRandom();
+	}
 
 	@Test
 	public void testNoClash() {
@@ -210,7 +220,7 @@ public class PlannerServiceTest {
 
 		List<ProductionRun> runs = TestUtil.createNonClashingRuns(30, now.plusDays(1));
 		// make our test work harder! Shuffle the list
-		Collections.shuffle(runs, TestUtil.RANDOM);
+		Collections.shuffle(runs, random);
 
 		List<ProductionRun> maximisedRuns = plannerService.maximiseNonClashingRuns(runs, now);
 
@@ -227,7 +237,6 @@ public class PlannerServiceTest {
 	}
 
 	@Test
-	@Ignore
 	public void testNoClash_MaxMinus1runs() throws InterruptedException {
 		// try running almost the max number of runs
 
@@ -235,7 +244,7 @@ public class PlannerServiceTest {
 
 		List<ProductionRun> runs = TestUtil.createNonClashingRuns(qtProps.getMaxQuantityOfRuns() - 1, now.plusDays(1));
 		// make our test work harder! Shuffle the list
-		Collections.shuffle(runs, TestUtil.RANDOM);
+		Collections.shuffle(runs, random);
 
 		List<ProductionRun> maximisedRuns = plannerService.maximiseNonClashingRuns(runs, now);
 
@@ -266,7 +275,7 @@ public class PlannerServiceTest {
 
 		LocalDateTime now = LocalDateTime.of(2018, 10, 10, 10, 10);
 
-		List<ProductionRun> runs = TestUtil.createNonClashingRuns(5, now.plusDays(1));
+		List<ProductionRun> runs = TestUtil.createNonClashingRuns(50, now.plusDays(1));
 		List<ProductionRun> clashes = TestUtil.createAdjacentClashes(runs);
 
 		assert runs.size() - 1 == clashes.size();
@@ -275,7 +284,7 @@ public class PlannerServiceTest {
 		runsToTest.addAll(runs);
 		runsToTest.addAll(clashes);
 		// make our test work harder! Shuffle the list
-		Collections.shuffle(runsToTest, TestUtil.RANDOM);
+		Collections.shuffle(runsToTest, random);
 
 		List<ProductionRun> maximisedRuns = plannerService.maximiseNonClashingRuns(runsToTest, now);
 
@@ -288,6 +297,31 @@ public class PlannerServiceTest {
 		}
 		// all runs should be found
 		maximisedRuns.containsAll(runs);
+	}
+
+	@Test
+	public void testAdjacentClashes2() {
+
+		LocalDateTime now = LocalDateTime.of(2018, 10, 10, 10, 10);
+
+		List<ProductionRun> runs = TestUtil.createNonClashingRuns(200, now.plusDays(1));
+		List<ProductionRun> clashes1 = TestUtil.createAdjacentClashes(runs);
+		List<ProductionRun> clashes2 = TestUtil.createAdjacentClashes(clashes1);
+
+		assert runs.size() - 1 == clashes1.size();
+		assert clashes1.size() - 1 == clashes2.size();
+
+		List<ProductionRun> runsToTest = new ArrayList<>();
+		runsToTest.addAll(runs);
+		runsToTest.addAll(clashes1);
+		runsToTest.addAll(clashes2);
+		// make our test work harder! Shuffle the list
+		Collections.shuffle(runsToTest, random);
+
+		List<ProductionRun> maximisedRuns = plannerService.maximiseNonClashingRuns(runsToTest, now);
+
+		// should have the same number
+		assertEquals(runs.size(), maximisedRuns.size());
 	}
 
 	/**
@@ -315,7 +349,7 @@ public class PlannerServiceTest {
 		assert !PlannerService.isClash(b, d);
 
 		// make our test work harder! Shuffle the list
-		Collections.shuffle(runsToTest, TestUtil.RANDOM);
+		Collections.shuffle(runsToTest, random);
 
 		List<ProductionRun> maximisedRuns = plannerService.maximiseNonClashingRuns(runsToTest, now.minusDays(5));
 
@@ -351,7 +385,7 @@ public class PlannerServiceTest {
 		List<ProductionRun> runsToTest = Arrays.asList(a, b, c, d, e);
 
 		// make our test work harder! Shuffle the list
-		Collections.shuffle(runsToTest, TestUtil.RANDOM);
+		Collections.shuffle(runsToTest, random);
 
 		List<ProductionRun> maximisedRuns = plannerService.maximiseNonClashingRuns(runsToTest, now.minusDays(5));
 
@@ -365,7 +399,7 @@ public class PlannerServiceTest {
 	@Test
 	public void testSameStartClash() {
 
-		List<ProductionRun> sameStarts = TestUtil.createSameStart(5, validCurrentDate);
+		List<ProductionRun> sameStarts = TestUtil.createSameStart(100, validCurrentDate, random);
 
 		// assert initial condition is correct
 		for (ProductionRun run : sameStarts) {
@@ -381,7 +415,7 @@ public class PlannerServiceTest {
 		runsToTest.addAll(sameStarts);
 		runsToTest.addAll(nonClashingRuns);
 		// make our test work harder! Shuffle the list
-		Collections.shuffle(runsToTest, TestUtil.RANDOM);
+		Collections.shuffle(runsToTest, random);
 
 		List<ProductionRun> maximisedRuns = plannerService.maximiseNonClashingRuns(runsToTest,
 				validCurrentDate.minusDays(5));
@@ -390,8 +424,9 @@ public class PlannerServiceTest {
 		assertEquals(nonClashingRuns.size() + 1, maximisedRuns.size());
 
 		// only one of the original 'sameStarts' should be found
-		sameStarts.retainAll(maximisedRuns);
-		assertEquals(1, sameStarts.size());
+		Set<ProductionRun> intersection = new HashSet<>(sameStarts);
+		intersection.retainAll(maximisedRuns);
+		assertEquals(1, intersection.size());
 		// all runs should be found
 		maximisedRuns.containsAll(nonClashingRuns);
 	}
@@ -399,7 +434,7 @@ public class PlannerServiceTest {
 	@Test
 	public void testSameEndClash() {
 
-		List<ProductionRun> sameEnds = TestUtil.createSameEnd(5, validCurrentDate);
+		List<ProductionRun> sameEnds = TestUtil.createSameEnd(100, validCurrentDate, random);
 
 		for (ProductionRun run : sameEnds) {
 			assert run.getEndDateTime().isEqual(validCurrentDate) : "End date is "
@@ -413,7 +448,7 @@ public class PlannerServiceTest {
 		runsToTest.addAll(sameEnds);
 		runsToTest.addAll(nonClashingRuns);
 		// make our test work harder! Shuffle the list
-		Collections.shuffle(runsToTest, TestUtil.RANDOM);
+		Collections.shuffle(runsToTest, random);
 
 		// get the earliest start date
 		LocalDateTime earliestStart = runsToTest.stream().map(r -> r.getStartDateTime())
