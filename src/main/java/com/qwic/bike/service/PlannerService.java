@@ -3,6 +3,7 @@ package com.qwic.bike.service;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
@@ -205,25 +206,38 @@ public class PlannerService {
 		return answer;
 	}
 
-	private List<ProductionRun> getLargestNonClashingCombo(List<ProductionRun> clashes) {
-		// go from large subsets to small
-		for (int subsetSize = clashes.size(); subsetSize > 0; subsetSize--) {
-			// generate all combinations for this clash
-			IGenerator<List<ProductionRun>> genCombos = Generator.combination(clashes).simple(subsetSize);
+	private List<ProductionRun> getLargestNonClashingCombo(List<ProductionRun> listOfClashingRuns) {
 
-			// for each combo, find the first that doesn't clash
-			Optional<List<ProductionRun>> findFirst = genCombos.stream().filter(l -> !doRunsClash(l)).findFirst();
+		Collections.sort(listOfClashingRuns);
 
-			if (findFirst.isPresent()) {
-				LOG.info("Found non clashing subset: {}",
-						findFirst.get().stream().map(ProductionRun::toString).collect(Collectors.joining(", ")));
-				return findFirst.get();
+		List<ProductionRun> largestNonClashingRuns = new ArrayList<>();
+
+		for (ProductionRun currentRun : listOfClashingRuns) {
+			if (largestNonClashingRuns.stream().noneMatch(previousValidRun -> isClash(previousValidRun, currentRun))) {
+				largestNonClashingRuns.add(currentRun);
 			}
-			// else, there's a clash, so try a smaller subset
 		}
-		LOG.error("Couldn't find non clashing combo!!! This shouldn't be possible. Input: {}",
-				clashes.stream().map(ProductionRun::toString).collect(Collectors.joining(", ")));
-		return new ArrayList<>();
+
+		return largestNonClashingRuns;
+
+//		// go from large subsets to small
+//		for (int subsetSize = listOfClashingRuns.size(); subsetSize > 0; subsetSize--) {
+//			// generate all combinations for this clash
+//			IGenerator<List<ProductionRun>> genCombos = Generator.combination(listOfClashingRuns).simple(subsetSize);
+//
+//			// for each combo, find the first that doesn't clash
+//			Optional<List<ProductionRun>> findFirst = genCombos.stream().filter(l -> !doRunsClash(l)).findFirst();
+//
+//			if (findFirst.isPresent()) {
+//				LOG.info("Found non clashing subset: {}",
+//						findFirst.get().stream().map(ProductionRun::toString).collect(Collectors.joining(", ")));
+//				return findFirst.get();
+//			}
+//			// else, there's a clash, so try a smaller subset
+//		}
+//		LOG.error("Couldn't find non clashing combo!!! This shouldn't be possible. Input: {}",
+//				listOfClashingRuns.stream().map(ProductionRun::toString).collect(Collectors.joining(", ")));
+//		return new ArrayList<>();
 	}
 
 	private boolean doRunsClash(List<ProductionRun> runs) {
