@@ -134,4 +134,18 @@ public class ParseTest {
 
 		testParseJsonListOfProductionRuns(mapOfExpectedDatesToDurations, inputJson);
 	}
+
+	@Test(expected = JsonMappingException.class)
+	public void testMappingException() throws JsonParseException, JsonMappingException, IOException {
+
+		// json input to be tested
+		final String inputJson = "[ " //
+				+ "{ " //
+				+ "\"startingDay\": \"2018-01-03T00:00:00.000Z\", \"duration\": 5 " //
+				// missing close brace, json invalid
+				// + "}" //
+				+ "]";
+
+		plannerService.parseJsonListOfProductionRuns(inputJson);
+	}
 }
