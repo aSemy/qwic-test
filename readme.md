@@ -4,8 +4,8 @@ This test must be done in Java. We will run a series of automatic tests to valid
 unit tests. For any doubts please send me an e-mail at hmartins@qwic.nl
 
 #Factory Managment
-In our factory, you are responsible for planning the usage of assembly line for our Supply Chain. ​
-Therefore you've decided to organize things a bit by planning everybody’s tasks. The logic is simple: 
+In our factory, you are responsible for planning the usage of assembly line for our Supply Chain. â€‹
+Therefore you've decided to organize things a bit by planning everybodyâ€™s tasks. The logic is simple: 
 the higher the number of bikes which can be assembled, the more people you can satisfy.
 
 ### Rules
@@ -29,14 +29,14 @@ the assembly line.
 
 - Production D starts on day 9 and ends on day 11
 
-In this example, it’s not possible to carry out all the productions because the periods for B and C overlap. 
+In this example, itâ€™s not possible to carry out all the productions because the periods for B and C overlap. 
 3 productions maximum can be carried out: A, D and C.
 
 ### Constraints
 
 startingDay > current date
 
-0 < quantity < 100000
+0 < quantity of possible schedules < 100000
 
 0 < duration < 1000
 
