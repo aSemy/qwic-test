@@ -6,7 +6,7 @@ import java.util.Comparator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class ProductionRun implements Comparable<ProductionRun> {
-	
+
 	/**
 	 * JSON input format: yyyy-MM-ddTHH:mm:ss.SSSz
 	 */
@@ -29,17 +29,16 @@ public class ProductionRun implements Comparable<ProductionRun> {
 				return O1_BEFORE;
 			if (o2 == null)
 				return O1_AFTER;
-			// if o1 is before o2, o1 should be first;
-			if (o1.startDateTime.isBefore(o2.startDateTime))
+			// sort by end time, earliest end time first
+			if (o1.getEndDateTime().isBefore(o2.getEndDateTime()))
 				return O1_BEFORE;
-			if (o2.startDateTime.isBefore(o1.startDateTime))
+			if (o2.getEndDateTime().isBefore(o1.getEndDateTime()))
 				return O1_AFTER;
 
-			// if we're here, they're on the same start datetime
-			// longest duration should be first
-			if (o1.durationDays > o2.durationDays)
+			// sort by start time, earliest first
+			if (o1.getStartDateTime().isBefore(o2.getStartDateTime()))
 				return O1_BEFORE;
-			if (o2.durationDays > o1.durationDays)
+			if (o2.getStartDateTime().isBefore(o1.getStartDateTime()))
 				return O1_AFTER;
 
 			// all comparisons have yielded equality
