@@ -14,6 +14,7 @@ import org.paukov.combinatorics3.Generator;
 import org.paukov.combinatorics3.IGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.core.JsonParseException;
@@ -21,12 +22,16 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.qwic.bike.model.ProductionRun;
+import com.qwic.bike.properties.QwicTestProperties;
 import com.qwic.bike.util.DateTimeUtils;
 
 @Service
 public class PlannerService {
 
 	private static final Logger LOG = LoggerFactory.getLogger(PlannerService.class);
+
+	@Autowired
+	private QwicTestProperties qwicTestProperties;
 
 	private final ObjectMapper mapper;
 
@@ -35,7 +40,8 @@ public class PlannerService {
 		mapper.findAndRegisterModules();
 	}
 
-	public List<ProductionRun> maximiseNonClashingRuns(final String jsonInput) throws JsonParseException, JsonMappingException, IOException {
+	public List<ProductionRun> maximiseNonClashingRuns(final String jsonInput)
+			throws JsonParseException, JsonMappingException, IOException {
 		return maximiseNonClashingRuns(jsonInput, LocalDateTime.now());
 	}
 
@@ -61,8 +67,10 @@ public class PlannerService {
 	 */
 	public List<ProductionRun> maximiseNonClashingRuns(List<ProductionRun> runs, final LocalDateTime currentDateTime) {
 
-		// remove runs that are less than or equal to the current date time
-		runs = runs.stream().filter(r -> r.getStartDateTime().isAfter(currentDateTime)).collect(Collectors.toList());
+		assert runs.size() < qwicTestProperties.getMaxQuantityOfRuns();
+
+		// remove invalid runs
+		runs = removeInvalidRuns(runs, currentDateTime);
 
 		// get groups of clashing runs
 		final List<SortedSet<ProductionRun>> listsOfClashingRuns = getListsOfClashingRuns(runs);
@@ -81,6 +89,23 @@ public class PlannerService {
 
 		return listOfNonClashingRuns;
 
+	}
+
+	private List<ProductionRun> removeInvalidRuns(final List<ProductionRun> runs, final LocalDateTime currentDateTime) {
+
+		List<ProductionRun> validRuns = runs.stream().filter(
+
+				r ->
+				// remove runs that are less than or equal to the current date time
+				r.getStartDateTime().isAfter(currentDateTime)
+						// remove runs that have invalid duration
+						|| r.getDurationDays() <= 0 && r.getDurationDays() >= qwicTestProperties.getMaxRunDuration()
+
+		).collect(Collectors.toList());
+
+		LOG.warn("Removed {} invalid runs.", runs.size() - validRuns.size());
+
+		return validRuns;
 	}
 
 	public List<ProductionRun> parseJsonListOfProductionRuns(final String jsonListOfProductionRuns)
