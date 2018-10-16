@@ -2,16 +2,17 @@ package com.qwic.bike;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
+import java.util.PrimitiveIterator.OfLong;
 
 import com.qwic.bike.model.ProductionRun;
 
 public abstract class TestUtil {
 
-	private final static SecureRandom random = new SecureRandom();
-	
+	public final static SecureRandom RANDOM = new SecureRandom();
+
 	public static List<ProductionRun> createNonClashingRuns(final long count, final LocalDateTime originalStart) {
 		final long gap = 3;
 		final long duration = 5;
@@ -25,10 +26,63 @@ public abstract class TestUtil {
 
 			start = pr.getEndDateTime().plusDays(gap);
 		}
-		
-		// make our tests work harder! Shuffle the list
-		Collections.shuffle(runs, random);
-		
+
+		return runs;
+	}
+
+	/**
+	 * Create clashes between adjacent runs. Returns only the clashes, not the
+	 * existing runs.
+	 */
+	public static List<ProductionRun> createAdjacentClashes(final List<ProductionRun> runs) {
+
+		final List<ProductionRun> clashingRuns = new ArrayList<>();
+
+		for (int i = 0; i < runs.size(); i++) {
+			ProductionRun run = runs.get(i);
+
+			if (i + 1 >= runs.size()) {
+				break;
+			} else {
+				ProductionRun nextRun = runs.get(i + 1);
+
+				LocalDateTime clashStart = run.getEndDateTime().minusDays(1);
+				LocalDateTime clashEnd = nextRun.getStartDateTime().plusDays(1);
+
+				long clashDuration = ChronoUnit.DAYS.between(clashStart, clashEnd);
+
+				ProductionRun clashingRun = new ProductionRun(clashStart, clashDuration);
+				clashingRuns.add(clashingRun);
+			}
+		}
+
+		return clashingRuns;
+	}
+
+	public static List<ProductionRun> createSameStart(final long count, final LocalDateTime start) {
+		OfLong durations = RANDOM.longs(count, 1, 100).iterator();
+
+		final List<ProductionRun> runs = new ArrayList<>();
+
+		for (int i = 0; i < count; i++) {
+			ProductionRun pr = new ProductionRun(start, durations.nextLong());
+			runs.add(pr);
+		}
+
+		return runs;
+	}
+
+	public static List<ProductionRun> createSameEnd(final long count, final LocalDateTime end) {
+		OfLong durations = RANDOM.longs(count, 1, 100).iterator();
+
+		final List<ProductionRun> runs = new ArrayList<>();
+
+		for (int i = 0; i < count; i++) {
+			long duration = durations.nextLong();
+			ProductionRun pr = new ProductionRun(end.minusDays(duration - 1), duration);
+			runs.add(pr);
+		}
+
 		return runs;
 	}
 
