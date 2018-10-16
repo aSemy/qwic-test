@@ -1,10 +1,10 @@
 # Intro
 
 This test must be done in Java. We will run a series of automatic tests to validate the logic but feel free to add your own
-unit tests. For any doubts please send me an e-mail at hmartins@qwic.nl
+unit tests. For any doubts please send me an e-mail at 
 
 #Factory Managment
-In our factory, you are responsible for planning the usage of assembly line for our Supply Chain. â€‹
+In our factory, you are responsible for planning the usage of assembly line for our Supply Chain. 
 Therefore you've decided to organize things a bit by planning everybodyâ€™s tasks. The logic is simple: 
 the higher the number of bikes which can be assembled, the more people you can satisfy.
 
@@ -29,7 +29,7 @@ the assembly line.
 
 - Production D starts on day 9 and ends on day 11
 
-In this example, itâ€™s not possible to carry out all the productions because the periods for B and C overlap. 
+In this example, it's not possible to carry out all the productions because the periods for B and C overlap. 
 3 productions maximum can be carried out: A, D and C.
 
 ### Constraints
