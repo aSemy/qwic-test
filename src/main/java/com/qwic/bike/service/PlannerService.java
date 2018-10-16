@@ -35,6 +35,14 @@ public class PlannerService {
 		mapper.findAndRegisterModules();
 	}
 
+	public List<ProductionRun> maximiseNonClashingRuns(final String jsonInput) throws JsonParseException, JsonMappingException, IOException {
+		return maximiseNonClashingRuns(jsonInput, LocalDateTime.now());
+	}
+
+	public List<ProductionRun> maximiseNonClashingRuns(List<ProductionRun> runs) {
+		return maximiseNonClashingRuns(runs, LocalDateTime.now());
+	}
+
 	public List<ProductionRun> maximiseNonClashingRuns(final String jsonInput, final LocalDateTime currentDateTime)
 			throws JsonParseException, JsonMappingException, IOException {
 		List<ProductionRun> runs = parseJsonListOfProductionRuns(jsonInput);
