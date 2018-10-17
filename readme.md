@@ -1,3 +1,11 @@
+PlannerService.maximiseNonClashingRuns(...) returns an array of non clashing ProductionRuns for any given input.
+
+
+
+
+-----------------
+
+
 # Intro
 
 This test must be done in Java. We will run a series of automatic tests to validate the logic but feel free to add your own
