@@ -248,15 +248,13 @@ public class PlannerServiceTest {
 		List<ProductionRun> maximisedRuns = plannerService.maximiseNonClashingRuns(runs, now);
 
 		// should have the same number
-		assertEquals("Expected 30 runs, not " + maximisedRuns.size(), runs.size(), maximisedRuns.size());
+		assertEquals(runs.size(), maximisedRuns.size());
 
 		// should have no duplicates
 		assertEquals(maximisedRuns.size(), new HashSet<ProductionRun>(maximisedRuns).size());
 
-		// no clashes should be found
-		for (ProductionRun run : runs) {
-			assertTrue(maximisedRuns.contains(run));
-		}
+		// all runs should be found
+		assertTrue(maximisedRuns.containsAll(runs));
 	}
 
 	@Test(expected = AssertionError.class)
@@ -391,6 +389,7 @@ public class PlannerServiceTest {
 
 		assertEquals(3, maximisedRuns.size());
 
+		// only one maximised solution
 		assertTrue(maximisedRuns.containsAll(Arrays.asList(a, c, e)));
 		assertFalse(maximisedRuns.contains(b));
 		assertFalse(maximisedRuns.contains(d));
